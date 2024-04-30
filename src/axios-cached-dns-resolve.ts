@@ -4,7 +4,7 @@ import net from 'net'
 import stringify from 'json-stringify-safe'
 import LRUCache from 'lru-cache'
 import util from 'util'
-import { init as initLogger } from './logging.js'
+import { init as initLogger } from './logging'
 import { Logger } from 'pino'
 import { AxiosInstance } from 'axios'
 
@@ -65,12 +65,17 @@ export function init() {
 
   startBackgroundRefresh()
   startPeriodicCachePrune()
-  cachePruneId = setInterval(() => config.cache?.purgeStale(), config.dnsIdleTtlMs)
 }
 
 export function reset() {
-  if (backgroundRefreshId) clearInterval(backgroundRefreshId)
-  if (cachePruneId) clearInterval(cachePruneId)
+  if (backgroundRefreshId) {
+    clearInterval(backgroundRefreshId)
+    backgroundRefreshId.unref();
+  }
+  if (cachePruneId) {
+    clearInterval(cachePruneId)
+    cachePruneId.unref();
+  }
 }
 
 export function startBackgroundRefresh() {
@@ -108,6 +113,10 @@ export function registerInterceptor(axios: AxiosInstance) {
   if (config.disabled || !axios || !axios.interceptors) return // supertest
   axios.interceptors.request.use(async (reqConfig) => {
     try {
+      if (!reqConfig.headers) {
+        reqConfig.headers = {};
+      }
+
       let url
       if (reqConfig.baseURL) {
         url = URL.parse(reqConfig.baseURL)
@@ -117,7 +126,7 @@ export function registerInterceptor(axios: AxiosInstance) {
 
       if (net.isIP(url.hostname || '')) return reqConfig // skip
 
-      reqConfig.headers.Host = url.hostname // set hostname in header
+      reqConfig.headers.Host = url.hostname || '' // set hostname in header
 
       url.hostname = await getAddress(url.hostname || '')
       url.host = null // clear hostname

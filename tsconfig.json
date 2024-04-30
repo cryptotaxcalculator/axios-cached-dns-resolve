@@ -5,9 +5,11 @@
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
-        "outDir": "./dist"
+        "outDir": "./dist",
+        "moduleResolution": "Node",
+        "rootDir": "./src"
     },
-    "include": ["src/**/*", "ava.config.cjs"],
+    "include": ["src/**/*"],
     "exclude": ["node_modules", "**/*.spec.ts"]
 }
 
