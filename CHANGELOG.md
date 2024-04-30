@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.3.0] - 2024-04-30
+
+### Changed
+
+- Added type safety (via Typescript)
+- Changed module resolution to use CJS
+- Changed test runner from ava to jest
+
 ## [3.2.2] - 2022-09-06
 
 ### Fixed
