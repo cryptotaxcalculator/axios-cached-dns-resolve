@@ -4,7 +4,6 @@ module.exports = {
     'import',
   ],
   rules: {
-    semi: [2, 'never'],
     'import/extensions': 0,
     'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
     'max-len': 'off',
@@ -13,4 +12,4 @@ module.exports = {
     'no-return-assign': ['error', 'except-parens'],
     'no-param-reassign': 'off',
   },
-}
+};

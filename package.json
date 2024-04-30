@@ -1,21 +1,19 @@
 {
-  "name": "axios-cached-dns-resolve",
+  "name": "@cryptotaxcalculator/axios-cached-dns-resolve",
   "version": "3.3.0",
-  "main": "index",
-  "description": "Caches dns resolutions made with async dns.resolve instead of default sync dns.lookup, refreshes in background",
+  "main": "dist/index.js",
+  "types": "index.d.ts",
+  "description": "Fork of axios-cached-dns-resolve in CJS and with type safety. Caches dns resolutions made with async dns.resolve instead of default sync dns.lookup, refreshes in background",
   "scripts": {
     "watchUnit": "NODE_ENV=DEBUG ava --fail-fast -v **/__tests__/**/*test*.js --watch",
     "ava": "ava",
+    "build": "tsc",
     "test": "npm run ava -timeout=2m",
     "watchLint": "esw . --ext=js --ext=mjs --ignore-path .gitignore --fix --watch",
     "lint": "eslint . --ext=js --ext=mjs --ignore-path .gitignore --fix"
   },
   "engines": {
     "node": ">=14.0.0"
-  },
-  "esm": {
-    "force": true,
-    "mode": "auto"
   },
   "keywords": [
     "axios",
@@ -31,8 +29,10 @@
     "url": "git@github.com:tcollinsworth/axios-cached-dns-resolve.git"
   },
   "devDependencies": {
+    "@types/json-stringify-safe": "^5.0.3",
+    "@types/node": "^20.12.7",
     "ava": "^3.15.0",
-    "axios": "^0.27.2",
+    "axios": "^1.6.8",
     "body-parser": "^1.20.2",
     "delay": "^5.0.0",
     "eslint": "^8.44.0",
@@ -41,7 +41,8 @@
     "eslint-watch": "^8.0.0",
     "esm": "^3.2.25",
     "express": "^4.18.2",
-    "ignore-styles": "^5.0.1"
+    "ignore-styles": "^5.0.1",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
     "json-stringify-safe": "^5.0.1",
