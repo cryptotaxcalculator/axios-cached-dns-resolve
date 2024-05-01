@@ -1,10 +1,14 @@
 {
   "name": "@cryptotaxcalculator/axios-cached-dns-resolve",
   "version": "3.3.0",
+  "files": [
+    "dist"
+  ],
   "main": "dist/index.js",
-  "types": "index.d.ts",
+  "types": "dist/index.d.ts",
   "description": "Fork of axios-cached-dns-resolve in CJS and with type safety. Caches dns resolutions made with async dns.resolve instead of default sync dns.lookup, refreshes in background",
   "scripts": {
+    "prepublish": "npm run lint && npm run build && npm run test",
     "build": "tsc",
     "test": "jest --forceExit --coverage",
     "test:ci": "jest src --bail --ci --coverage --forceExit --maxWorkers=2",
@@ -20,17 +24,17 @@
     "resolve",
     "lookup"
   ],
-  "author": "Troy Collinsworth",
+  "author": "Crypto Tax Calculator (forked from Troy Collinsworth)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git@github.com:cryptotaxcalculator/axios-cached-dns-resolve.git"
+    "url": "https://github.com/cryptotaxcalculator/axios-cached-dns-resolve.git"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/json-stringify-safe": "^5.0.3",
     "@types/node": "^20.12.7",
-    "axios": "^0.27.2",
+    "axios": "^0.28.0",
     "body-parser": "^1.20.2",
     "delay": "^5.0.0",
     "eslint": "^8.44.0",
