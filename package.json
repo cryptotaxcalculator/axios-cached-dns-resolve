@@ -8,6 +8,7 @@
     "watchUnit": "NODE_ENV=DEBUG ava --fail-fast -v **/__tests__/**/*test*.js --watch",
     "build": "tsc",
     "test": "jest",
+    "test:ci": "jest src --bail --ci --coverage --forceExit --maxWorkers=2",
     "watchLint": "esw . --ext=js --ext=mjs --ignore-path .gitignore --fix --watch",
     "lint": "eslint . --ext=js --ext=mjs --ignore-path .gitignore --fix"
   },
