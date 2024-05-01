@@ -5,11 +5,9 @@
   "types": "index.d.ts",
   "description": "Fork of axios-cached-dns-resolve in CJS and with type safety. Caches dns resolutions made with async dns.resolve instead of default sync dns.lookup, refreshes in background",
   "scripts": {
-    "watchUnit": "NODE_ENV=DEBUG ava --fail-fast -v **/__tests__/**/*test*.js --watch",
     "build": "tsc",
-    "test": "jest",
+    "test": "jest --forceExit --coverage",
     "test:ci": "jest src --bail --ci --coverage --forceExit --maxWorkers=2",
-    "watchLint": "esw . --ext=js --ext=mjs --ignore-path .gitignore --fix --watch",
     "lint": "eslint . --ext=js --ext=mjs --ignore-path .gitignore --fix"
   },
   "engines": {
@@ -26,7 +24,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git@github.com:tcollinsworth/axios-cached-dns-resolve.git"
+    "url": "git@github.com:cryptotaxcalculator/axios-cached-dns-resolve.git"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
