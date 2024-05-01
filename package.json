@@ -8,7 +8,7 @@
   "types": "dist/index.d.ts",
   "description": "Fork of axios-cached-dns-resolve in CJS and with type safety. Caches dns resolutions made with async dns.resolve instead of default sync dns.lookup, refreshes in background",
   "scripts": {
-    "prepublish": "npm run lint && npm run build && npm run test",
+    "prepublishOnly": "npm run lint && npm run build && npm run test",
     "build": "tsc",
     "test": "jest src --forceExit --coverage",
     "test:ci": "jest src --bail --ci --coverage --forceExit --maxWorkers=2",
