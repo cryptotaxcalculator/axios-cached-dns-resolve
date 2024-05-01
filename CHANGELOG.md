@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.3.1] - 2024-04-30
+
+### Fixed
+
+- Fixed NPM publish issues
+
 ## [3.3.0] - 2024-04-30
 
 ### Changed
