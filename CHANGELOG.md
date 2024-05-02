@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.3.2] - 2024-05-02
+
+### Fixed
+
+- Fixed types (for Config, CacheConfig, Stats, DnsEntry)
+
+## [3.3.1] - 2024-04-30
+
+### Fixed
+
+- Fixed NPM publish issues
+
+## [3.3.0] - 2024-04-30
+
+### Changed
+
+- Added type safety (via Typescript)
+- Changed module resolution to use CJS
+- Changed test runner from ava to jest
+
 ## [3.2.2] - 2022-09-06
 
 ### Fixed

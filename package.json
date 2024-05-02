@@ -1,21 +1,21 @@
 {
-  "name": "axios-cached-dns-resolve",
-  "version": "3.3.0",
-  "main": "index",
-  "description": "Caches dns resolutions made with async dns.resolve instead of default sync dns.lookup, refreshes in background",
+  "name": "@cryptotaxcalculator/axios-cached-dns-resolve",
+  "version": "3.3.2",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "description": "Fork of axios-cached-dns-resolve in CJS and with type safety. Caches dns resolutions made with async dns.resolve instead of default sync dns.lookup, refreshes in background",
   "scripts": {
-    "watchUnit": "NODE_ENV=DEBUG ava --fail-fast -v **/__tests__/**/*test*.js --watch",
-    "ava": "ava",
-    "test": "npm run ava -timeout=2m",
-    "watchLint": "esw . --ext=js --ext=mjs --ignore-path .gitignore --fix --watch",
+    "prepublishOnly": "npm run lint && npm run build && npm run test",
+    "build": "tsc",
+    "test": "jest src --forceExit --coverage",
+    "test:ci": "jest src --bail --ci --coverage --forceExit --maxWorkers=2",
     "lint": "eslint . --ext=js --ext=mjs --ignore-path .gitignore --fix"
   },
   "engines": {
     "node": ">=14.0.0"
-  },
-  "esm": {
-    "force": true,
-    "mode": "auto"
   },
   "keywords": [
     "axios",
@@ -24,15 +24,17 @@
     "resolve",
     "lookup"
   ],
-  "author": "Troy Collinsworth",
+  "author": "Crypto Tax Calculator (forked from Troy Collinsworth)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git@github.com:tcollinsworth/axios-cached-dns-resolve.git"
+    "url": "https://github.com/cryptotaxcalculator/axios-cached-dns-resolve.git"
   },
   "devDependencies": {
-    "ava": "^3.15.0",
-    "axios": "^0.27.2",
+    "@types/jest": "^29.5.12",
+    "@types/json-stringify-safe": "^5.0.3",
+    "@types/node": "^20.12.7",
+    "axios": "^0.28.0",
     "body-parser": "^1.20.2",
     "delay": "^5.0.0",
     "eslint": "^8.44.0",
@@ -41,7 +43,10 @@
     "eslint-watch": "^8.0.0",
     "esm": "^3.2.25",
     "express": "^4.18.2",
-    "ignore-styles": "^5.0.1"
+    "ignore-styles": "^5.0.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
     "json-stringify-safe": "^5.0.1",

@@ -11,4 +11,5 @@ export {
   registerInterceptor,
   getAddress,
   backgroundRefresh,
-} from './axios-cached-dns-resolve.js'
+} from "./axios-cached-dns-resolve";
+
