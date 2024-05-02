@@ -7,6 +7,7 @@ import util from 'util'
 import { init as initLogger } from './logging'
 import { Logger } from 'pino'
 import { AxiosInstance } from 'axios'
+import { Config, CacheConfig, Stats, DnsEntry } from "./index.d";
 
 const dnsResolve = util.promisify(dns.resolve)
 const dnsLookup = util.promisify(dns.lookup)
@@ -32,12 +33,12 @@ export const config = {
     },
   },
   cache: undefined as LRUCache<string, any> | undefined,
-}
+} as Config;
 
 export const cacheConfig = {
   max: config.dnsCacheSize,
   ttl: (config.dnsTtlMs * config.cacheGraceExpireMultiplier), // grace for refresh
-}
+} as CacheConfig;
 
 export const stats = {
   dnsEntries: 0,
@@ -48,7 +49,7 @@ export const stats = {
   errors: 0,
   lastError: 0,
   lastErrorTs: 0,
-}
+} as Stats;
 
 let log: Logger
 let backgroundRefreshId: NodeJS.Timeout
@@ -164,7 +165,7 @@ export async function getAddress(host: string) {
     nextIdx: 0,
     lastUsedTs: Date.now(),
     updatedTs: Date.now(),
-  }
+  } as DnsEntry
   // eslint-disable-next-line no-plusplus
   const ip = dnsEntry.ips[dnsEntry.nextIdx++ % dnsEntry.ips.length] // round-robin
   config.cache?.set(host, dnsEntry)

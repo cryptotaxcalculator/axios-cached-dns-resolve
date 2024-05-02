@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.3.2] - 2024-05-02
+
+### Fixed
+
+- Fixed types (for Config, CacheConfig, Stats, DnsEntry)
+
 ## [3.3.1] - 2024-04-30
 
 ### Fixed
