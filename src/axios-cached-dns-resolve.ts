@@ -201,12 +201,12 @@ export async function backgroundRefresh() {
         config.cache?.set(key, value)
         stats.refreshed += 1
       } catch (err: any) {
-// best effort
+        // best effort
         recordError(err, `Error backgroundRefresh host: ${key}, ${stringify(value)}, ${err.message}`)
       }
     }
   } catch (err: any) {
-// best effort
+    // best effort
     recordError(err, `Error backgroundRefresh, ${err.message}`)
   } finally {
     backgroundRefreshing = false
