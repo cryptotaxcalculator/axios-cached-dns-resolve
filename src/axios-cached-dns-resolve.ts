@@ -80,12 +80,20 @@ export function reset() {
 }
 
 export function startBackgroundRefresh() {
-  if (backgroundRefreshId) clearInterval(backgroundRefreshId)
+  if (backgroundRefreshId) {
+    clearInterval(backgroundRefreshId)
+    backgroundRefreshId.unref()
+  }
+
   backgroundRefreshId = setInterval(backgroundRefresh, config.backgroundScanMs)
 }
 
 export function startPeriodicCachePrune() {
-  if (cachePruneId) clearInterval(cachePruneId)
+  if (cachePruneId) {
+    clearInterval(cachePruneId)
+    cachePruneId.unref()
+  }
+
   cachePruneId = setInterval(() => config.cache?.purgeStale(), config.dnsIdleTtlMs)
 }
 
@@ -177,29 +185,28 @@ export async function backgroundRefresh() {
   if (backgroundRefreshing) return // don't start again if currently iterating slowly
   backgroundRefreshing = true
   try {
-    config.cache?.forEach(async (value, key) => {
+    for (const [key, value] of config.cache?.entries() || []) {
       try {
         if (value.updatedTs + config.dnsTtlMs > Date.now()) {
-          return // continue/skip
+          continue; // skip
         }
         if (value.lastUsedTs + config.dnsIdleTtlMs <= Date.now()) {
           stats.idleExpired += 1
           config.cache?.delete(key)
-          return // continue
+          continue;
         }
-
         const ips = await resolve(value.host)
         value.ips = ips
         value.updatedTs = Date.now()
         config.cache?.set(key, value)
         stats.refreshed += 1
       } catch (err: any) {
-        // best effort
+// best effort
         recordError(err, `Error backgroundRefresh host: ${key}, ${stringify(value)}, ${err.message}`)
       }
-    })
+    }
   } catch (err: any) {
-    // best effort
+// best effort
     recordError(err, `Error backgroundRefresh, ${err.message}`)
   } finally {
     backgroundRefreshing = false
