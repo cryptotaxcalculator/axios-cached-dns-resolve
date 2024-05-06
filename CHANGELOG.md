@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.3.3] - 2024-05-02
+
+### Fixed
+
+- Fixed potential memory leak issues (relating to timer .unref() calls and unresolved promises in background refresh function)
+
 ## [3.3.2] - 2024-05-02
 
 ### Fixed
