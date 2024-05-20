@@ -1,6 +1,5 @@
 export {
   config,
-  cacheConfig,
   stats,
   init,
   reset,
@@ -12,4 +11,3 @@ export {
   getAddress,
   backgroundRefresh,
 } from "./axios-cached-dns-resolve";
-

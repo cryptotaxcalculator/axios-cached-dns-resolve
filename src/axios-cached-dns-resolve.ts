@@ -1,12 +1,12 @@
 import { AxiosInstance } from "axios";
 import dns from "dns";
-import stringify from "json-stringify-safe";
 import LRUCache from "lru-cache";
 import net from "net";
 import { Logger } from "pino";
 import URL from "url";
 import util from "util";
-import { CacheConfig, Config, DnsEntry, Stats } from "./index.d";
+import { DNSEntryCache } from "./DNSEntryCache";
+import { Config, DnsEntry, LRUCacheConfig, Stats } from "./index.d";
 import { init as initLogger } from "./logging";
 
 const dnsResolve = util.promisify(dns.resolve);
@@ -37,13 +37,21 @@ export const config = {
       },
     },
   },
+  redisConfig:
+    process.env.USE_REDIS === "true"
+      ? {
+          url: process.env.REDIS_URL || "localhost:6379",
+          password: process.env.REDIS_PASSWORD,
+          ttl: parseInt(process.env.REDIS_TTL || "5"), // default 5 seconds
+        }
+      : undefined,
   cache: undefined as LRUCache<string, DnsEntry> | undefined,
 } as Config;
 
-export const cacheConfig = {
+config.lruCacheConfig = {
   max: config.dnsCacheSize,
   ttl: config.dnsTtlMs * config.cacheGraceExpireMultiplier, // grace for refresh
-} as CacheConfig;
+} as LRUCacheConfig;
 
 export const stats = {
   dnsEntries: 0,
@@ -67,7 +75,7 @@ export function init() {
 
   if (config.cache) return;
 
-  config.cache = new LRUCache<string, DnsEntry>(cacheConfig);
+  config.cache = new DNSEntryCache(config);
 
   startBackgroundRefresh();
   startPeriodicCachePrune();
@@ -99,10 +107,9 @@ export function startPeriodicCachePrune() {
     cachePruneId.unref();
   }
 
-  cachePruneId = setInterval(
-    () => config.cache?.purgeStale(),
-    config.dnsIdleTtlMs
-  );
+  cachePruneId = setInterval(async () => {
+    await config.cache?.purgeStale();
+  }, config.dnsIdleTtlMs);
 }
 
 export function getStats() {
@@ -110,21 +117,9 @@ export function getStats() {
   return stats;
 }
 
-export function getDnsCacheEntries() {
-  return Array.from(config.cache?.values() || []);
+export async function getDnsCacheEntries() {
+  return (await config.cache?.entries()) || [];
 }
-
-// const dnsEntry = {
-//   host: 'www.amazon.com',
-//   ips: [
-//     '52.54.40.141',
-//     '34.205.98.207',
-//     '3.82.118.51',
-//   ],
-//   nextIdx: 0,
-//   lastUsedTs: 1555771516581, Date.now()
-//   updatedTs: 1555771516581,
-// }
 
 export function registerInterceptor(axios: AxiosInstance) {
   if (config.disabled || !axios || !axios.interceptors) return; // supertest
@@ -167,13 +162,13 @@ export function registerInterceptor(axios: AxiosInstance) {
 }
 
 export async function getAddress(host: string) {
-  let dnsEntry = config.cache?.get(host);
+  let dnsEntry = await config.cache?.get(host);
+
   if (dnsEntry) {
     stats.hits += 1;
     dnsEntry.lastUsedTs = Date.now();
-    // eslint-disable-next-line no-plusplus
     const ip = dnsEntry.ips[dnsEntry.nextIdx++ % dnsEntry.ips.length]; // round-robin
-    config.cache?.set(host, dnsEntry);
+    await config.cache?.set(host, dnsEntry);
     return ip;
   }
   stats.misses += 1;
@@ -187,9 +182,8 @@ export async function getAddress(host: string) {
     lastUsedTs: Date.now(),
     updatedTs: Date.now(),
   } as DnsEntry;
-  // eslint-disable-next-line no-plusplus
   const ip = dnsEntry.ips[dnsEntry.nextIdx++ % dnsEntry.ips.length]; // round-robin
-  config.cache?.set(host, dnsEntry);
+  await config.cache?.set(host, dnsEntry);
   return ip;
 }
 
@@ -198,33 +192,23 @@ export async function backgroundRefresh() {
   if (backgroundRefreshing) return; // don't start again if currently iterating slowly
   backgroundRefreshing = true;
   try {
-    for (const [key, value] of config.cache?.entries() || []) {
-      try {
-        if (value.updatedTs + config.dnsTtlMs > Date.now()) {
-          continue; // skip
-        }
-        if (value.lastUsedTs + config.dnsIdleTtlMs <= Date.now()) {
-          stats.idleExpired += 1;
-          config.cache?.delete(key);
-          continue;
-        }
-        const ips = await resolve(value.host);
-        value.ips = ips;
-        value.updatedTs = Date.now();
-        config.cache?.set(key, value);
-        stats.refreshed += 1;
-      } catch (err) {
-        // best effort
-        recordError(
-          err,
-          `Error backgroundRefresh host: ${key}, ${stringify(value)}, ${
-            err instanceof Error ? err.message : "an unknown error occurred"
-          }`
-        );
+    const entries = await config.cache?.entries();
+    for (const entry of entries || []) {
+      if (entry.updatedTs + config.dnsTtlMs > Date.now()) {
+        continue; // skip
       }
+      if (entry.lastUsedTs + config.dnsIdleTtlMs <= Date.now()) {
+        stats.idleExpired += 1;
+        await config.cache?.delete(entry.host);
+        continue;
+      }
+      const ips = await resolve(entry.host);
+      entry.ips = ips;
+      entry.updatedTs = Date.now();
+      await config.cache?.set(entry.host, entry);
+      stats.refreshed += 1;
     }
   } catch (err) {
-    // best effort
     recordError(
       err,
       `Error backgroundRefresh, ${

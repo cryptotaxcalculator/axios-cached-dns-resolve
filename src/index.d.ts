@@ -1,5 +1,21 @@
 import { AxiosInstance } from "axios";
-import LRUCache from "lru-cache";
+
+interface RedisConfig {
+  url: string;
+  password?: string;
+  ttl: number; // Redis TTL in seconds
+}
+
+interface CacheInterface {
+  size: number;
+  get(key: string): Promise<DnsEntry | null>;
+  set(key: string, value: DnsEntry): Promise<void>;
+  entries(): Promise<DnsEntry[]>;
+  purgeStale(): Promise<void>;
+  delete(key: string): Promise<void>;
+  clear(): Promise<void>;
+}
+
 export interface Config {
   disabled: boolean;
   dnsTtlMs: number;
@@ -8,10 +24,12 @@ export interface Config {
   backgroundScanMs: number;
   dnsCacheSize: number;
   logging: LoggingConfig;
-  cache?: LRUCache<string, DnsEntry>;
+  redisConfig?: RedisConfig;
+  lruCacheConfig?: LRUCacheConfig;
+  cache: CacheInterface | undefined;
 }
 
-export interface CacheConfig {
+export interface LRUCacheConfig {
   max: number;
   ttl: number;
 }
