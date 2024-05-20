@@ -1,4 +1,15 @@
-# axios-cached-dns-resolve
+# @cryptotaxcalculator/axios-cached-dns-resolve
+
+This library is a fork of the original `axios-cached-dns-resolve` package but adds/changes the following:
+
+- Adds type safety
+- Changes the module resolution to CJS (from ESM)
+- Changes the test runner from `ava` to `jest`
+- Adds support for Redis as a cache
+
+For the complete list of changes, see the [CHANGELOG](CHANGELOG.md).
+
+---
 
 Axios uses node.js dns.lookup to resolve host names.
 dns.lookup is synchronous and executes on limited libuv thread pool.
@@ -19,62 +30,82 @@ This lib proxies through the OS resolution mechanism which may provide further c
 
 ## Objectives
 
-  * Async requests - dns resolve vs lookup
-  * Fast - local in-app memory cache lookup
-  * Fresh - periodically (frequently) updated
-  * Constant DNS load/latency vs random load/variable latency
-  * Providing statistics and introspection
+- Async requests - dns resolve vs lookup
+- Fast - local in-app memory cache lookup
+- Fresh - periodically (frequently) updated
+- Constant DNS load/latency vs random load/variable latency
+- Providing statistics and introspection
 
 ## Requirements
-
-ECMAScript module (esm), not native esm/.mjs with package.json type: module, requires esm
 
 Node 14+
 
 ## Getting started
 
 ```console
-npm i -S axios-cached-dns-resolve
+npm i -S @cryptotaxcalculator/axios-cached-dns-resolve
 ```
 
 # Usage
 
 ```javascript
-  import { registerInterceptor } from 'axios-cached-dns-resolve'
+import { registerInterceptor } from "@cryptotaxcalculator/axios-cached-dns-resolve";
 
-  const axiosClient = axios.create(config)
+const axiosClient = axios.create(config);
 
-  registerInterceptor(axiosClient)
-
+registerInterceptor(axiosClient);
 ```
-Use axiosClient as normal
 
+Use axiosClient as normal
 
 ## Configuration
 
 ```javascript
 const config = {
-  disabled: process.env.AXIOS_DNS_DISABLE === 'true',
-  dnsTtlMs: process.env.AXIOS_DNS_CACHE_TTL_MS || 5000, // when to refresh actively used dns entries (5 sec)
-  cacheGraceExpireMultiplier: process.env.AXIOS_DNS_CACHE_EXPIRE_MULTIPLIER || 2, // maximum grace to use entry beyond TTL
-  dnsIdleTtlMs: process.env.AXIOS_DNS_CACHE_IDLE_TTL_MS || 1000 * 60 * 60, // when to remove entry entirely if not being used (1 hour)
-  backgroundScanMs: process.env.AXIOS_DNS_BACKGROUND_SCAN_MS || 2400, // how frequently to scan for expired TTL and refresh (2.4 sec)
-  dnsCacheSize: process.env.AXIOS_DNS_CACHE_SIZE || 100, // maximum number of entries to keep in cache
+  disabled: process.env.AXIOS_DNS_DISABLE === "true",
+  dnsTtlMs: parseInt(process.env.AXIOS_DNS_CACHE_TTL_MS || "5000"), // when to refresh actively used dns entries (5 sec)
+  cacheGraceExpireMultiplier: parseInt(
+    process.env.AXIOS_DNS_CACHE_EXPIRE_MULTIPLIER || "2"
+  ), // maximum grace to use entry beyond TTL
+  dnsIdleTtlMs:
+    parseInt(process.env.AXIOS_DNS_CACHE_IDLE_TTL_MS || "1000") * 60 * 60, // when to remove entry entirely if not being used (1 hour)
+  backgroundScanMs: parseInt(
+    process.env.AXIOS_DNS_BACKGROUND_SCAN_MS || "2400"
+  ), // how frequently to scan for expired TTL and refresh (2.4 sec)
+  dnsCacheSize: parseInt(process.env.AXIOS_DNS_CACHE_SIZE || "100"), // maximum number of entries to keep in cache
   // pino logging options
   logging: {
-    name: 'axios-cache-dns-resolve',
+    name: "axios-cache-dns-resolve",
     // enabled: true,
-    level: process.env.AXIOS_DNS_LOG_LEVEL || 'info', // default 'info' others trace, debug, info, warn, error, and fatal
+    level: process.env.AXIOS_DNS_LOG_LEVEL || "info", // default 'info' others trace, debug, info, warn, error, and fatal
     // timestamp: true,
-    prettyPrint: process.env.NODE_ENV === 'DEBUG' || false,
-    useLevelLabels: true,
+    prettyPrint: process.env.NODE_ENV === "DEBUG" || false,
+    formatters: {
+      level: (label: string) => {
+        return { level: label };
+      },
+    },
   },
-}
+  redisConfig:
+    process.env.USE_REDIS === "true"
+      ? {
+          url: process.env.REDIS_URL || "localhost:6379",
+          password: process.env.REDIS_PASSWORD,
+          ttl: parseInt(process.env.REDIS_TTL || "5"), // default 5 seconds
+        }
+      : undefined,
+  cache: undefined as LRUCache<string, DnsEntry> | undefined,
+} as Config;
+
+config.lruCacheConfig = {
+  max: config.dnsCacheSize,
+  ttl: config.dnsTtlMs * config.cacheGraceExpireMultiplier, // grace for refresh
+} as LRUCacheConfig;
 ```
 
 ## Statistics
 
-Statistics are available via 
+Statistics are available via
 
 ```javascript
 getStats()
@@ -112,17 +143,20 @@ getDnsCacheEntries()
 ### Express Statistics
 
 ```javascript
-import { getStats, getDnsCacheEntries } from 'axios-cached-dns-resolve'
+import {
+  getStats,
+  getDnsCacheEntries,
+} from "@cryptotaxcalculator/axios-cached-dns-resolve";
 
-router.get('/axios-dns-cache-statistics', getAxiosDnsCacheStatistics)
+router.get("/axios-dns-cache-statistics", getAxiosDnsCacheStatistics);
 
 function getAxiosDnsCacheStatistics(req, resp) {
-  resp.json(getStats())
+  resp.json(getStats());
 }
 
-router.get('/axios-dns-cache-entries', getAxiosDnsCacheEntries)
+router.get("/axios-dns-cache-entries", getAxiosDnsCacheEntries);
 
 function getAxiosDnsCacheEntries(req, resp) {
-  resp.json(getDnsCacheEntries())
+  resp.json(getDnsCacheEntries());
 }
 ```
