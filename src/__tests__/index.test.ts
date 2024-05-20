@@ -1,7 +1,7 @@
-import delay from 'delay';
-import LRUCache from 'lru-cache';
-import axios, { AxiosInstance } from 'axios';
-import * as axiosCachingDns from '..';
+import delay from "delay";
+import LRUCache from "lru-cache";
+import axios, { AxiosInstance } from "axios";
+import * as axiosCachingDns from "..";
 
 let axiosClient: AxiosInstance;
 
@@ -11,7 +11,9 @@ beforeEach(() => {
   axiosCachingDns.config.cacheGraceExpireMultiplier = 2;
   axiosCachingDns.config.backgroundScanMs = 100;
 
-  axiosCachingDns.cacheConfig.ttl = (axiosCachingDns.config.dnsTtlMs * axiosCachingDns.config.cacheGraceExpireMultiplier);
+  axiosCachingDns.cacheConfig.ttl =
+    axiosCachingDns.config.dnsTtlMs *
+    axiosCachingDns.config.cacheGraceExpireMultiplier;
 
   axiosCachingDns.config.cache = new LRUCache(axiosCachingDns.cacheConfig);
 
@@ -31,11 +33,11 @@ afterAll(() => {
   axiosCachingDns.reset();
 });
 
-test('query google with baseURL and relative url', async () => {
+test("query google with baseURL and relative url", async () => {
   axiosCachingDns.registerInterceptor(axios);
 
-  const { data } = await axios.get('/finance', {
-    baseURL: 'http://www.google.com',
+  const { data } = await axios.get("/finance", {
+    baseURL: "http://www.google.com",
     // headers: { Authorization: `Basic ${basicauth}` },
   });
   expect(data).toBeTruthy();
@@ -51,12 +53,12 @@ test('query google with baseURL and relative url', async () => {
   expect(dnsCacheEntries[0].updatedTs).toBeTruthy();
 });
 
-test('query google caches and after idle delay uncached', async () => {
-  const resp = await axiosClient.get('http://google.com');
+test("query google caches and after idle delay uncached", async () => {
+  const resp = await axiosClient.get("http://google.com");
   expect(resp.data).toBeTruthy();
-  expect(axiosCachingDns.config.cache?.get('google.com')).toBeTruthy();
+  expect(axiosCachingDns.config.cache?.get("google.com")).toBeTruthy();
   await delay(6000);
-  expect(axiosCachingDns.config.cache?.get('google.com')).toBeFalsy();
+  expect(axiosCachingDns.config.cache?.get("google.com")).toBeFalsy();
 
   const expectedStats = {
     dnsEntries: 0,
@@ -74,15 +76,17 @@ test('query google caches and after idle delay uncached', async () => {
   expect(stats).toEqual(expectedStats);
 });
 
-test('query google caches and refreshes', async () => {
-  await axiosClient.get('http://google.com');
-  const { updatedTs } = axiosCachingDns.config.cache?.get('google.com');
+test("query google caches and refreshes", async () => {
+  await axiosClient.get("http://google.com");
+  const dnsEntry = axiosCachingDns.config.cache?.get("google.com");
+  if (!dnsEntry) throw new Error("DNS entry for google.com not found");
+  const { updatedTs } = dnsEntry;
   const timeoutTime = Date.now() + 5000;
   while (true) {
-    const dnsEntry = axiosCachingDns.config.cache?.get('google.com');
-    if (!dnsEntry) throw new Error('dnsEntry missing or expired');
+    const dnsEntry = axiosCachingDns.config.cache?.get("google.com");
+    if (!dnsEntry) throw new Error("dnsEntry missing or expired");
     if (updatedTs !== dnsEntry.updatedTs) break;
-    if (Date.now() > timeoutTime) throw new Error('Timeout exceeded');
+    if (Date.now() > timeoutTime) throw new Error("Timeout exceeded");
     await delay(10);
   }
 
@@ -102,23 +106,29 @@ test('query google caches and refreshes', async () => {
   expect(stats).toEqual(expectedStats);
 });
 
-test('query two services, caches and after one idle delay uncached', async () => {
-  await axiosClient.get('http://amazon.com');
+test("query two services, caches and after one idle delay uncached", async () => {
+  await axiosClient.get("http://amazon.com");
 
-  await axiosClient.get('http://microsoft.com');
-  const { lastUsedTs } = axiosCachingDns.config.cache?.get('microsoft.com');
-  expect(axiosCachingDns.config.cache?.get('microsoft.com').nextIdx).toBe(1);
+  await axiosClient.get("http://microsoft.com");
+  const dnsEntry = axiosCachingDns.config.cache?.get("microsoft.com");
+  if (!dnsEntry) throw new Error("DNS entry for microsoft.com not found");
+  const { lastUsedTs } = dnsEntry;
+  expect(dnsEntry.nextIdx).toBe(1);
 
-  await axiosClient.get('http://microsoft.com');
-  expect(axiosCachingDns.config.cache?.get('microsoft.com').nextIdx).toBe(2);
+  await axiosClient.get("http://microsoft.com");
+  const dnsEntry2 = axiosCachingDns.config.cache?.get("microsoft.com");
+  if (!dnsEntry2) throw new Error("DNS entry for microsoft.com not found");
+  expect(dnsEntry2.nextIdx).toBe(2);
 
-  expect(lastUsedTs < axiosCachingDns.config.cache?.get('microsoft.com').lastUsedTs).toBeTruthy();
+  expect(lastUsedTs < dnsEntry2.lastUsedTs).toBeTruthy();
 
   expect(axiosCachingDns.config.cache?.size).toBe(2);
-  await axiosClient.get('http://microsoft.com');
-  expect(axiosCachingDns.config.cache?.get('microsoft.com').nextIdx).toBe(3);
+  await axiosClient.get("http://microsoft.com");
+  const dnsEntry3 = axiosCachingDns.config.cache?.get("microsoft.com");
+  if (!dnsEntry3) throw new Error("DNS entry for microsoft.com not found");
+  expect(dnsEntry3.nextIdx).toBe(3);
 
-  expect(lastUsedTs !== axiosCachingDns.config.cache?.get('microsoft.com').lastUsedTs).toBeTruthy();
+  expect(lastUsedTs !== dnsEntry3.lastUsedTs).toBeTruthy();
 
   expect(axiosCachingDns.config.cache?.size).toBe(2);
   await delay(4000);
@@ -142,25 +152,25 @@ test('query two services, caches and after one idle delay uncached', async () =>
   expect(stats).toEqual(expectedStats);
 });
 
-test('validate axios config not altered', async () => {
-  const baseURL = 'http://microsoft.com';
+test("validate axios config not altered", async () => {
+  const baseURL = "http://microsoft.com";
   const axiosConfig = { baseURL };
   const custAxiosClient = axios.create(axiosConfig);
 
   axiosCachingDns.registerInterceptor(custAxiosClient);
 
-  await custAxiosClient.get('/');
+  await custAxiosClient.get("/");
   expect(baseURL).toBe(axiosConfig.baseURL);
-  await custAxiosClient.get('/');
+  await custAxiosClient.get("/");
   expect(baseURL).toBe(axiosConfig.baseURL);
 });
 
-test('validate axios get config not altered', async () => {
-  const url = 'http://microsoft.com';
+test("validate axios get config not altered", async () => {
+  const url = "http://microsoft.com";
   const custAxiosClient = axios.create();
 
   const reqConfig = {
-    method: 'get',
+    method: "get",
     url,
   };
 
@@ -172,12 +182,12 @@ test('validate axios get config not altered', async () => {
   expect(url).toBe(reqConfig.url);
 });
 
-test('validate axios request config not altered', async () => {
-  const url = 'http://microsoft.com';
+test("validate axios request config not altered", async () => {
+  const url = "http://microsoft.com";
   const custAxiosClient = axios.create();
 
   const reqConfig = {
-    method: 'get',
+    method: "get",
     url,
   };
 

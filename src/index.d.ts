@@ -8,7 +8,7 @@ export interface Config {
   backgroundScanMs: number;
   dnsCacheSize: number;
   logging: LoggingConfig;
-  cache?: LRUCache<string, any>;
+  cache?: LRUCache<string, DnsEntry>;
 }
 
 export interface CacheConfig {
@@ -23,7 +23,7 @@ export interface Stats {
   misses: number;
   idleExpired: number;
   errors: number;
-  lastError: any;
+  lastError: unknown;
   lastErrorTs: number;
 }
 
