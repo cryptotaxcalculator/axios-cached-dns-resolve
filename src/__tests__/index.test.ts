@@ -1,50 +1,52 @@
 import axios, { AxiosInstance } from "axios";
 import delay from "delay";
 import * as axiosCachingDns from "..";
-import { DNSEntryCache } from "../DNSEntryCache";
 import { Config } from "../index.d";
+import { clearStats } from "../axios-cached-dns-resolve";
 
 let axiosClient: AxiosInstance;
 let useRedis: boolean = false; // Flag to switch between Redis and LRU
 
 beforeEach(async () => {
-  axiosCachingDns.config.dnsTtlMs = 1000;
-  axiosCachingDns.config.dnsIdleTtlMs = 5000;
-  axiosCachingDns.config.cacheGraceExpireMultiplier = 2;
-  axiosCachingDns.config.backgroundScanMs = 100;
+  const testConfig = {
+    disabled: false,
+    dnsTtlMs: 1000,
+    cacheGraceExpireMultiplier: 2,
+    dnsIdleTtlMs: 5000,
+    backgroundScanMs: 100,
+    dnsCacheSize: 100,
+    cache: undefined,
+    logging: {
+      name: "test-logger",
+      level: "debug",
+      prettyPrint: true,
+      formatters: {
+        level: (label: string) => ({ level: label }),
+      },
+    },
+  } as Config;
 
   if (useRedis) {
-    axiosCachingDns.config.redisConfig = {
+    testConfig.redisConfig = {
       url: "localhost:6379",
-      ttl:
-        (axiosCachingDns.config.dnsTtlMs *
-          axiosCachingDns.config.cacheGraceExpireMultiplier) /
-        1000,
+      ttl: (testConfig.dnsTtlMs * testConfig.cacheGraceExpireMultiplier) / 1000,
     };
-    axiosCachingDns.config.lruCacheConfig = undefined;
+    testConfig.lruCacheConfig = undefined;
   } else {
-    axiosCachingDns.config.lruCacheConfig = {
-      max: axiosCachingDns.config.dnsCacheSize,
-      ttl:
-        axiosCachingDns.config.dnsTtlMs *
-        axiosCachingDns.config.cacheGraceExpireMultiplier, // grace for refresh
+    testConfig.lruCacheConfig = {
+      max: testConfig.dnsCacheSize,
+      ttl: testConfig.dnsTtlMs * testConfig.cacheGraceExpireMultiplier, // grace for refresh
     };
-    axiosCachingDns.config.redisConfig = undefined;
+    testConfig.redisConfig = undefined;
   }
 
-  axiosCachingDns.config.cache = new DNSEntryCache(
-    axiosCachingDns.config,
-    true // Create a fresh cache on each run
-  );
+  axiosCachingDns.init(testConfig, true);
 
   axiosClient = axios.create({
     timeout: 5000,
   });
 
   axiosCachingDns.registerInterceptor(axiosClient);
-
-  axiosCachingDns.startBackgroundRefresh();
-  axiosCachingDns.startPeriodicCachePrune();
 });
 
 afterAll(() => {
@@ -84,7 +86,7 @@ describe("Initialization Tests", () => {
 describe("LRU Cache Tests", () => {
   beforeAll(async () => {
     useRedis = false;
-    await clearStats();
+    clearStats();
   });
 
   runTests();
@@ -138,7 +140,7 @@ function runTests() {
       lastErrorTs: 0,
     };
 
-    const stats = await axiosCachingDns.getStats();
+    const stats = axiosCachingDns.getStats();
     stats.refreshed = 0;
     expect(stats).toEqual(expectedStats);
   });
@@ -265,16 +267,4 @@ function runTests() {
     await custAxiosClient.request(reqConfig);
     expect(url).toBe(reqConfig.url);
   });
-}
-
-async function clearStats() {
-  const stats = await axiosCachingDns.getStats();
-  stats.dnsEntries = 0;
-  stats.refreshed = 0;
-  stats.hits = 0;
-  stats.misses = 0;
-  stats.idleExpired = 0;
-  stats.errors = 0;
-  stats.lastError = 0;
-  stats.lastErrorTs = 0;
 }

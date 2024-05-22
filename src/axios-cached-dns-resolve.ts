@@ -1,6 +1,5 @@
 import { AxiosInstance } from "axios";
 import dns from "dns";
-import LRUCache from "lru-cache";
 import net from "net";
 import { Logger } from "pino";
 import URL from "url";
@@ -45,7 +44,7 @@ export let config = {
           ttl: parseInt(process.env.AXIOS_DNS_CACHE_REDIS_TTL || "5"), // default 5 seconds
         }
       : undefined,
-  cache: undefined as LRUCache<string, DnsEntry> | undefined,
+  cache: undefined,
 } as Config;
 
 config.lruCacheConfig = {
@@ -70,14 +69,15 @@ let cachePruneId: NodeJS.Timeout;
 
 init();
 
-export function init(customConfig?: Config) {
-  config = customConfig || config;
+export function init(customConfig?: Config, fresh?: boolean) {
+  // Apply the custom configuration or fallback to the existing config
+  config = customConfig ?? config;
   log = initLogger(config.logging);
 
-  if (config.cache) return;
+  // Initialize a new cache with the specified configuration
+  config.cache = new DNSEntryCache(config, fresh);
 
-  config.cache = new DNSEntryCache(config);
-
+  // Start background tasks
   startBackgroundRefresh();
   startPeriodicCachePrune();
 }
@@ -116,6 +116,17 @@ export function startPeriodicCachePrune() {
 export function getStats() {
   stats.dnsEntries = config.cache?.size || 0;
   return stats;
+}
+
+export function clearStats() {
+  stats.dnsEntries = 0;
+  stats.refreshed = 0;
+  stats.hits = 0;
+  stats.misses = 0;
+  stats.idleExpired = 0;
+  stats.errors = 0;
+  stats.lastError = 0;
+  stats.lastErrorTs = 0;
 }
 
 export async function getDnsCacheEntries() {
