@@ -48,7 +48,8 @@ export interface Stats {
 interface LoggingConfig {
   name: string;
   level: string;
-  prettyPrint: boolean;
+  prettyPrint?: boolean;
+  stream?: NodeJS.WritableStream;
   formatters: {
     level: (label: string) => { level: string };
   };
@@ -63,7 +64,7 @@ export interface DnsEntry {
 }
 
 declare module "axios-cached-dns-resolve" {
-  export function init(): void;
+  export function init(config?: Config): void;
   export function startBackgroundRefresh(): void;
   export function startPeriodicCachePrune(): void;
   export function getStats(): Stats;

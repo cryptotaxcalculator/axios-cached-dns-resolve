@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.0] - 2024-05-21
+
+### **Breaking Changes**
+
+- Changed environment/config variables to use `AXIOS_DNS_CACHE` prefix
+- Changed `init` function to allow for custom config
+
 ## [3.4.0] - 2024-05-20
 
 ### Added

@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from "axios";
 import delay from "delay";
 import * as axiosCachingDns from "..";
 import { DNSEntryCache } from "../DNSEntryCache";
+import { Config } from "../index.d";
 
 let axiosClient: AxiosInstance;
 let useRedis: boolean = false; // Flag to switch between Redis and LRU
@@ -49,6 +50,35 @@ beforeEach(async () => {
 afterAll(() => {
   axiosCachingDns.config.cache?.clear();
   axiosCachingDns.reset();
+});
+
+describe("Initialization Tests", () => {
+  test("init function with custom config", async () => {
+    const customConfig = {
+      disabled: false,
+      dnsTtlMs: 3000,
+      cacheGraceExpireMultiplier: 3,
+      dnsIdleTtlMs: 2000,
+      backgroundScanMs: 1500,
+      dnsCacheSize: 50,
+      logging: {
+        name: "test-logger",
+        level: "debug",
+        prettyPrint: true,
+        formatters: {
+          level: (label: string) => ({ level: label }),
+        },
+      },
+      redisConfig: undefined,
+      lruCacheConfig: {
+        max: 50,
+        ttl: 9000,
+      },
+    } as Config;
+
+    axiosCachingDns.init(customConfig);
+    expect(axiosCachingDns.config).toEqual(customConfig);
+  });
 });
 
 describe("LRU Cache Tests", () => {

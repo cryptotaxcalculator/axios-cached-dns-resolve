@@ -12,8 +12,8 @@ import { init as initLogger } from "./logging";
 const dnsResolve = util.promisify(dns.resolve);
 const dnsLookup = util.promisify(dns.lookup);
 
-export const config = {
-  disabled: process.env.AXIOS_DNS_DISABLE === "true",
+export let config = {
+  disabled: process.env.AXIOS_DNS_CACHE_DISABLE === "true",
   dnsTtlMs: parseInt(process.env.AXIOS_DNS_CACHE_TTL_MS || "5000"), // when to refresh actively used dns entries (5 sec)
   cacheGraceExpireMultiplier: parseInt(
     process.env.AXIOS_DNS_CACHE_EXPIRE_MULTIPLIER || "2"
@@ -21,14 +21,14 @@ export const config = {
   dnsIdleTtlMs:
     parseInt(process.env.AXIOS_DNS_CACHE_IDLE_TTL_MS || "1000") * 60 * 60, // when to remove entry entirely if not being used (1 hour)
   backgroundScanMs: parseInt(
-    process.env.AXIOS_DNS_BACKGROUND_SCAN_MS || "2400"
+    process.env.AXIOS_DNS_CACHE_BACKGROUND_SCAN_MS || "2400"
   ), // how frequently to scan for expired TTL and refresh (2.4 sec)
   dnsCacheSize: parseInt(process.env.AXIOS_DNS_CACHE_SIZE || "100"), // maximum number of entries to keep in cache
   // pino logging options
   logging: {
     name: "axios-cache-dns-resolve",
     // enabled: true,
-    level: process.env.AXIOS_DNS_LOG_LEVEL || "info", // default 'info' others trace, debug, info, warn, error, and fatal
+    level: process.env.AXIOS_DNS_CACHE_LOG_LEVEL || "info", // default 'info' others trace, debug, info, warn, error, and fatal
     // timestamp: true,
     prettyPrint: process.env.NODE_ENV === "DEBUG" || false,
     formatters: {
@@ -38,11 +38,11 @@ export const config = {
     },
   },
   redisConfig:
-    process.env.USE_REDIS === "true"
+    process.env.AXIOS_DNS_CACHE_USE_REDIS === "true"
       ? {
-          url: process.env.REDIS_URL || "localhost:6379",
-          password: process.env.REDIS_PASSWORD,
-          ttl: parseInt(process.env.REDIS_TTL || "5"), // default 5 seconds
+          url: process.env.AXIOS_DNS_CACHE_REDIS_URL || "localhost:6379",
+          password: process.env.AXIOS_DNS_CACHE_REDIS_PASSWORD,
+          ttl: parseInt(process.env.AXIOS_DNS_CACHE_REDIS_TTL || "5"), // default 5 seconds
         }
       : undefined,
   cache: undefined as LRUCache<string, DnsEntry> | undefined,
@@ -70,7 +70,8 @@ let cachePruneId: NodeJS.Timeout;
 
 init();
 
-export function init() {
+export function init(customConfig?: Config) {
+  config = customConfig || config;
   log = initLogger(config.logging);
 
   if (config.cache) return;
