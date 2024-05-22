@@ -64,13 +64,13 @@ export interface DnsEntry {
 }
 
 declare module "axios-cached-dns-resolve" {
-  export function init(config?: Config): void;
-  export function startBackgroundRefresh(): void;
-  export function startPeriodicCachePrune(): void;
+  export async function init(config?: Config): Promise<void>;
+  export async function startBackgroundRefresh(): Promise<void>;
+  export async function startPeriodicCachePrune(): Promise<void>;
   export function getStats(): Stats;
-  export function getDnsCacheEntries(): DnsEntry[];
+  export async function getDnsCacheEntries(): Promise<DnsEntry[]>;
   export function registerInterceptor(axios: AxiosInstance): void;
-  export function getAddress(host: string): Promise<string>;
-  export function backgroundRefresh(): Promise<void>;
-  export function resolve(host: string): Promise<string[]>;
+  export async function getAddress(host: string): Promise<string>;
+  export async function backgroundRefresh(): Promise<void>;
+  export async function resolve(host: string): Promise<string[]>;
 }
