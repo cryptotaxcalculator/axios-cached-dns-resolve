@@ -26,8 +26,8 @@ export class DNSEntryCache implements CacheInterface {
     } else {
       // Default to LRU cache
       this.lruCache = new LRUCache<string, DnsEntry>({
-        max: 500,
-        ttl: 1000,
+        max: 100,
+        ttl: 10000,
       });
     }
   }
